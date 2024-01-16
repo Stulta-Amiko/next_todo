@@ -4,6 +4,7 @@ import { TodoType } from '../types/todo'
 import palette from '../styles/palette'
 import TrashCanIcon from '../public/statics/svg/trash_can.svg'
 import CheckMarkIcon from '../public/statics/svg/check_mark.svg'
+import { checkTodoAPI, deleteTodoAPI } from '../lib/api/todo'
 
 interface IProps {
   todos: TodoType[]
@@ -123,12 +124,12 @@ const Container = styled.div`
 `
 
 const TodoList: React.FC<IProps> = ({ todos }) => {
-  const [loaclTodos, setLocalTodos] = useState(todos)
+  const [localTodos, setLocalTodos] = useState(todos)
 
   const todoColorNums2 = useMemo(() => {
     const colors: ObjectIndexType = {}
 
-    loaclTodos.forEach((todo) => {
+    localTodos.forEach((todo) => {
       const value = colors[todo.color]
       if (!value) {
         colors[`${todo.color}`] = 1
@@ -141,9 +142,9 @@ const TodoList: React.FC<IProps> = ({ todos }) => {
 
   const checkTodo = async (id: number) => {
     try {
-      await checkTodo(id)
-      console.log('체크')
-      const newTodos = loaclTodos.map((todo) => {
+      await checkTodoAPI(id)
+      console.log('체크했습니다.')
+      const newTodos = localTodos.map((todo) => {
         if (todo.id === id) {
           return { ...todo, checked: !todo.checked }
         }
@@ -155,11 +156,22 @@ const TodoList: React.FC<IProps> = ({ todos }) => {
     }
   }
 
+  const deleteTodo = async (id: number) => {
+    try {
+      await deleteTodoAPI(id)
+      const newTodos = localTodos.filter((todo) => todo.id !== id)
+      setLocalTodos(newTodos)
+      console.log('삭제했습니다.')
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
   return (
     <Container>
       <div className='todo-list-header'>
         <p className='todo-list-last-todo'>
-          남은 TODO<span>{loaclTodos.length}개</span>
+          남은 TODO<span>{localTodos.length}개</span>
         </p>
         <div className='todo-list-header-colors'>
           {Object.keys(todoColorNums2).map((color, index) => (
@@ -171,7 +183,7 @@ const TodoList: React.FC<IProps> = ({ todos }) => {
         </div>
       </div>
       <ul className='todo-list'>
-        {loaclTodos.map((todo) => (
+        {localTodos.map((todo) => (
           <li className='todo-item' key={todo.id}>
             <div className='todo-left-side'>
               <div className={`todo-color-block bg-${todo.color}`} />
@@ -186,7 +198,12 @@ const TodoList: React.FC<IProps> = ({ todos }) => {
             <div className='todo-right-side'>
               {todo.checked && (
                 <>
-                  <TrashCanIcon className='todo-trash-can' onClick={() => {}} />
+                  <TrashCanIcon
+                    className='todo-trash-can'
+                    onClick={() => {
+                      deleteTodo(todo.id)
+                    }}
+                  />
                   <CheckMarkIcon
                     className='todo-check-mark'
                     onClick={() => {
